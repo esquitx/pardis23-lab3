@@ -16,11 +16,11 @@
 echo "Compiling ..."
 cd ..
 cd src
-javac -d ../bin MeasureMain.java
+javac -d ../bin Measurement.java
 cd ..
 
 type=$1
-filepath=data/timeFor${type}.dat
+filepath=data/exectime${type}.dat
 
 
 echo "Script initiated at `date` on `hostname`"

@@ -19,7 +19,7 @@ set ylabel 'time'
 # Here column 1 is number of threads
 # Column 2, 3, 4, 5 & 6 are the speedup
 plot "exectimeA1.dat" using 1:2 with lines title 'A1', \
-     "exectimeA2" using 1:2 with lines title 'A2', \
-     "exectimeB1" using 1:2 with lines title 'B1', \
+     "exectimeA2.dat" using 1:2 with lines title 'A2', \
+     "exectimeB1.dat" using 1:2 with lines title 'B1', \
      "exectimeB2.dat" using 1:2 with lines title 'B2', \
 

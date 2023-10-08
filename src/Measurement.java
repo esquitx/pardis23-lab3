@@ -62,11 +62,11 @@ public class Measurement {
             }
 
             // Print information to stderr
-            System.err.printf("Execution type:  %s\n", type);
-            System.err.printf("Thread count:       %d\n", threads);
-            System.err.printf("Number of values:           %d\n", numValues);
-            System.err.printf("Number of ops:           %d\n", numOps);
-            System.err.printf("Max value:           %d\n", max);
+            System.err.printf("Execution type:    %s\n", type);
+            System.err.printf("Thread count:      %d\n", threads);
+            System.err.printf("Number of values:  %d\n", numValues);
+            System.err.printf("Number of ops:     %d\n", numOps);
+            System.err.printf("Max value:         %d\n", max);
 
             // Record execTime
             double execTime = run_measurement(threads, lockFreeSet, ops, values);
