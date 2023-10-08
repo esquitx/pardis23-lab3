@@ -18,7 +18,7 @@ public class Measurement {
                 probability = new int[] { 1, 1, 8 };
                 return new Distribution.Discrete(42, probability);
             case "B2":
-                probability = new int[] { 1, 1, 8 };
+                probability = new int[] { 1, 1 };
                 return new Distribution.Discrete(42, probability);
             default:
                 return null;
