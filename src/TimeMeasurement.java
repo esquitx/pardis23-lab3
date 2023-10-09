@@ -5,41 +5,6 @@ import java.util.Arrays;
 
 public class TimeMeasurement {
 
-    private static Distribution getOps(String type, int numOps) {
-        int[] probability;
-        switch (type) {
-            case "A1":
-                probability = new int[] { 1, 1, 8 };
-                return new Distribution.Discrete(42, probability);
-            case "A2":
-                probability = new int[] { 1, 1 };
-                return new Distribution.Discrete(42, probability);
-            case "B1":
-                probability = new int[] { 1, 1, 8 };
-                return new Distribution.Discrete(42, probability);
-            case "B2":
-                probability = new int[] { 1, 1 };
-                return new Distribution.Discrete(42, probability);
-            default:
-                return null;
-        }
-    }
-
-    private static Distribution getValues(String type, int max) {
-        switch (type) {
-            case "A1":
-                return new Distribution.Uniform(82, 0, max);
-            case "A2":
-                return new Distribution.Uniform(82, 0, max);
-            case "B1":
-                return new Distribution.Normal(82, 100, 0, max);
-            case "B2":
-                return new Distribution.Normal(82, 100, 0, max);
-            default:
-                return null;
-        }
-    }
-
     public static void measure(String type, int threads, int numValues, int numOps, int max) {
 
         try {
@@ -47,8 +12,8 @@ public class TimeMeasurement {
             LockFreeSet<Integer> lockFreeSet = new LockFreeSkipList<>();
 
             // Get ops and values for selected execution type
-            Distribution ops = TimeMeasurement.getOps(type, numOps);
-            Distribution values = TimeMeasurement.getValues(type, max);
+            Distribution ops = Auxiliary.getOps(type, numOps);
+            Distribution values = Auxiliary.getValues(type, max);
 
             // Run experiment with n threads
             run_measurement(threads, lockFreeSet, ops, values);
