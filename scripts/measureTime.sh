@@ -16,7 +16,7 @@
 echo "Compiling ..."
 cd ..
 cd src
-javac -d ../bin Measurement.java
+javac -d ../bin TimeMeasurement.java
 cd ..
 
 type=$1
@@ -30,6 +30,6 @@ declare -a numThreads=(1 2 4 8 16 32 64 96)
 
 for threadCount in "${numThreads[@]}"
 do
-srun java -cp ./bin Measurement "$type" $threadCount 1000000 1000000 1000000 'false' >> $filepath
+srun java -cp ./bin TimeMeasurement "$type" $threadCount 1000000 1000000 1000000 'false' >> $filepath
 done
 echo "Script finished at `date` on `hostname`"

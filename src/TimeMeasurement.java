@@ -3,7 +3,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Callable;
 import java.util.Arrays;
 
-public class Measurement {
+public class TimeMeasurement {
 
     private static Distribution getOps(String type, int numOps) {
         int[] probability;
@@ -40,26 +40,18 @@ public class Measurement {
         }
     }
 
-    public static void measure(String type, int threads, int numValues, int numOps, int max, boolean validateLog) {
+    public static void measure(String type, int threads, int numValues, int numOps, int max) {
 
         try {
             // Create a standard lock free skip list
             LockFreeSet<Integer> lockFreeSet = new LockFreeSkipList<>();
 
             // Get ops and values for selected execution type
-            Distribution ops = Measurement.getOps(type, numOps);
-            Distribution values = Measurement.getValues(type, max);
+            Distribution ops = TimeMeasurement.getOps(type, numOps);
+            Distribution values = TimeMeasurement.getValues(type, max);
 
             // Run experiment with n threads
             run_measurement(threads, lockFreeSet, ops, values);
-
-            if (validateLog) {
-                // Get the log
-                Log.Entry[] log = lockFreeSet.getLog();
-
-                // Check sequential consistency
-                Log.validate(log);
-            }
 
             // Print information to stderr
             System.err.printf("Execution type:    %s\n", type);
@@ -151,11 +143,9 @@ public class Measurement {
         int numOps = Integer.parseInt(args[3]);
         // Max sampling number
         int max = Integer.parseInt(args[4]);
-        // Shoull we validate log?
-        boolean validateLog = Boolean.parseBoolean(args[5]);
 
         // Take measurements
-        measure(type, threads, numValues, numOps, max, validateLog);
+        measure(type, threads, numValues, numOps, max);
 
     }
 }

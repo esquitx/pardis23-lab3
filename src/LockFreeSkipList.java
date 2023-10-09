@@ -1,6 +1,5 @@
 import java.util.concurrent.atomic.AtomicMarkableReference;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class LockFreeSkipList<T extends Comparable<T>> implements LockFreeSet<T> {
@@ -10,11 +9,8 @@ public class LockFreeSkipList<T extends Comparable<T>> implements LockFreeSet<T>
         private final Node<T> head = new Node<T>();
         private final Node<T> tail = new Node<T>();
 
-        // linearization point info
-        List<Log.Entry> linPoints = new ArrayList<Log.Entry>();
-
         // log
-        private Log log;
+        private ArrayList<Log.Entry> log = new ArrayList<Log.Entry>();
 
         public LockFreeSkipList() {
                 for (int i = 0; i < head.next.length; i++) {
@@ -91,11 +87,15 @@ public class LockFreeSkipList<T extends Comparable<T>> implements LockFreeSet<T>
                                 Node<T> succ = succs[bottomLevel];
                                 // If not reached bottom level and not marked, skip
                                 if (!pred.next[bottomLevel].compareAndSet(succ, newNode, false, false)) {
-                                        // log.add(new Log.Entry("add", new Object[] { threadId, x }, false));
+                                        synchronized (log) {
+                                                log.add(new Log.Entry("add", new Object[] { threadId, x }, false));
+                                        }
                                         continue;
                                 }
-                                // Linearization point
-                                // log.add(new Log.Entry("add", new Object[] { threadId, x }, true));
+                                // LinPoint - Global lock
+                                synchronized (log) {
+                                        log.add(new Log.Entry("add", new Object[] { threadId, x }, true));
+                                }
                                 // Traverse levels
                                 for (int level = bottomLevel + 1; level <= topLevel; level++) {
                                         while (true) {
@@ -143,14 +143,18 @@ public class LockFreeSkipList<T extends Comparable<T>> implements LockFreeSet<T>
                                                         false, true);
                                         succ = succs[bottomLevel].next[bottomLevel].get(marked);
                                         if (iMarkedIt) {
-                                                // log.add(linPoints, new Log.Entry("remove", new Object[] { threadId,
-                                                // x},
-                                                // true));
+                                                synchronized (log) {
+                                                        log.add(new Log.Entry("remove", new Object[] { threadId, x },
+                                                                        true));
+                                                }
+
                                                 find(x, preds, succs);
                                                 return true;
                                         } else if (marked[0]) {
-                                                // log.add(new Log.Entry("remove", new Object[] { threadId, x },
-                                                // false));
+                                                synchronized (log) {
+                                                        log.add(new Log.Entry("remove", new Object[] { threadId, x },
+                                                                        false));
+                                                }
                                                 return false;
                                         }
                                 }
@@ -186,8 +190,10 @@ public class LockFreeSkipList<T extends Comparable<T>> implements LockFreeSet<T>
                                         curr = succ;
                                 } else {
                                         result = curr.value != null && x.compareTo(curr.value) == 0 && !marked[0];
-                                        // log.add(new Log.Entry("contains", new Object[] { threadId, x },
-                                        // result));
+                                        synchronized (log) {
+                                                log.add(new Log.Entry("contains", new Object[] { threadId, x },
+                                                                result));
+                                        }
                                         break;
                                 }
                         }
