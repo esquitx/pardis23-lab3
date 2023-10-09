@@ -3,7 +3,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Callable;
 import java.util.Arrays;
 
-public class TimeMeasurement {
+public class Measurement {
 
     public static void measure(String type, int threads, int numValues, int numOps, int max) {
 
@@ -14,9 +14,6 @@ public class TimeMeasurement {
             // Get ops and values for selected execution type
             Distribution ops = Auxiliary.getOps(type, numOps);
             Distribution values = Auxiliary.getValues(type, max);
-
-            // Run experiment with n threads
-            run_measurement(threads, lockFreeSet, ops, values);
 
             // Print information to stderr
             System.err.printf("Execution type:    %s\n", type);
@@ -31,7 +28,13 @@ public class TimeMeasurement {
             // Prints average execution time and standard deviation to stdout.
             System.out.printf("%s %d %.2f\n", type, threads, execTime);
 
-            System.err.println("Measurements done");
+            System.err.println("Measurements done. Proceeding to validation.");
+
+            Log.Entry[] log = lockFreeSet.getLog();
+            boolean isValidated = Log.validate(log);
+
+            System.err.printf("Validation complete. Log is %d correctly linearized\n",
+                    (isValidated ? "" : "NOT"));
 
         } catch (
 

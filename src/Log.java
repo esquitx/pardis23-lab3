@@ -37,7 +37,7 @@ public class Log {
                                 }
                         }
                 }
-                System.out.println(discrepancyCount);
+                System.err.printf("Encountered %d discrepancies\n", discrepancyCount);
                 return discrepancyCount == 0;
         }
 

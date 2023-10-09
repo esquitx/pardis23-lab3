@@ -239,7 +239,11 @@ public class LockFreeSkipList<T extends Comparable<T>> implements LockFreeSet<T>
         public Log.Entry[] getLog() {
 
                 // Convert to array
-                return null;
+                Log.Entry[] logArray = new Log.Entry[log.size()];
+                log.toArray(logArray);
+
+                // return as array
+                return logArray;
         }
 
 }
