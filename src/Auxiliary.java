@@ -7,14 +7,24 @@ public class Auxiliary {
                 probability = new int[] { 1, 1, 8 };
                 return new Distribution.Discrete(42, probability);
             case "A2":
-                probability = new int[] { 1, 1 };
+                probability = new int[] { 1, 1, 0 };
                 return new Distribution.Discrete(42, probability);
             case "B1":
                 probability = new int[] { 1, 1, 8 };
                 return new Distribution.Discrete(42, probability);
             case "B2":
-                probability = new int[] { 1, 1 };
+                probability = new int[] { 1, 1, 0 };
                 return new Distribution.Discrete(42, probability);
+            case "testAdd":
+                probability = new int[] { 1, 0, 0 };
+                return new Distribution.Discrete(42, probability);
+            case "testRemove":
+                probability = new int[] { 0, 1, 0 };
+                return new Distribution.Discrete(42, probability);
+            case "testContains":
+                probability = new int[] { 0, 0, 1 };
+                return new Distribution.Discrete(42, probability);
+
             default:
                 return null;
         }
