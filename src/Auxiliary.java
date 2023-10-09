@@ -40,6 +40,11 @@ public class Auxiliary {
                 return new Distribution.Normal(82, 100, 0, max);
             case "B2":
                 return new Distribution.Normal(82, 100, 0, max);
+            case "testAdd":
+            case "testRemove":
+            case "testContains": {
+                return new Distribution.Uniform(82, 0, max);
+            }
             default:
                 return null;
         }
