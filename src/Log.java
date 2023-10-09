@@ -37,7 +37,10 @@ public class Log {
                                 }
                         }
                 }
+
+                // Notify discrepancy count in terminal
                 System.err.printf("Encountered %d discrepancies\n", discrepancyCount);
+
                 return discrepancyCount == 0;
         }
 

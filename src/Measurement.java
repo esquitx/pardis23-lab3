@@ -32,9 +32,7 @@ public class Measurement {
 
             Log.Entry[] log = lockFreeSet.getLog();
             boolean isValidated = Log.validate(log);
-
-            System.err.printf("Validation complete. Log is %d correctly linearized\n",
-                    (isValidated ? "" : "NOT"));
+            System.err.printf("Validation complete. Log is %s correctly linearized\n", isValidated ? "" : "NOT");
 
         } catch (
 

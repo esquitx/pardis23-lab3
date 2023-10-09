@@ -12,6 +12,8 @@ public class LockFreeSkipList<T extends Comparable<T>> implements LockFreeSet<T>
         // log
         private ArrayList<Log.Entry> log = new ArrayList<Log.Entry>();
 
+        // Global lock
+
         public LockFreeSkipList() {
                 for (int i = 0; i < head.next.length; i++) {
                         head.next[i] = new AtomicMarkableReference<LockFreeSkipList.Node<T>>(tail, false);
@@ -75,6 +77,9 @@ public class LockFreeSkipList<T extends Comparable<T>> implements LockFreeSet<T>
                         // Check if element already added, end if so
                         boolean found = find(x, preds, succs);
                         if (found) {
+                                synchronized (log) {
+                                        log.add(new Log.Entry("add", new Object[] { threadId, x }, false));
+                                }
                                 return false;
                         } else {
                                 Node<T> newNode = new Node(x, topLevel); // Create the new node
@@ -87,14 +92,11 @@ public class LockFreeSkipList<T extends Comparable<T>> implements LockFreeSet<T>
                                 Node<T> succ = succs[bottomLevel];
                                 // If not reached bottom level and not marked, skip
                                 if (!pred.next[bottomLevel].compareAndSet(succ, newNode, false, false)) {
+                                        // Successful add
                                         synchronized (log) {
-                                                log.add(new Log.Entry("add", new Object[] { threadId, x }, false));
+                                                log.add(new Log.Entry("add", new Object[] { threadId, x }, true));
                                         }
                                         continue;
-                                }
-                                // LinPoint - Global lock
-                                synchronized (log) {
-                                        log.add(new Log.Entry("add", new Object[] { threadId, x }, true));
                                 }
                                 // Traverse levels
                                 for (int level = bottomLevel + 1; level <= topLevel; level++) {
@@ -125,6 +127,10 @@ public class LockFreeSkipList<T extends Comparable<T>> implements LockFreeSet<T>
                 while (true) {
                         boolean found = find(x, preds, succs);
                         if (!found) {
+                                // Unsuccessful remove
+                                synchronized (log) {
+                                        log.add(new Log.Entry("remove", new Object[] { threadId, x }, false));
+                                }
                                 return false;
                         } else {
                                 Node<T> nodeToRemove = succs[bottomLevel];
@@ -141,26 +147,21 @@ public class LockFreeSkipList<T extends Comparable<T>> implements LockFreeSet<T>
                                 while (true) {
                                         boolean iMarkedIt = nodeToRemove.next[bottomLevel].compareAndSet(succ, succ,
                                                         false, true);
+                                        // Successful remove
+                                        synchronized (log) {
+                                                log.add(new Log.Entry("remove", new Object[] { threadId, x }, true));
+
+                                        }
                                         succ = succs[bottomLevel].next[bottomLevel].get(marked);
                                         if (iMarkedIt) {
-                                                synchronized (log) {
-                                                        log.add(new Log.Entry("remove", new Object[] { threadId, x },
-                                                                        true));
-                                                }
-
                                                 find(x, preds, succs);
                                                 return true;
                                         } else if (marked[0]) {
-                                                synchronized (log) {
-                                                        log.add(new Log.Entry("remove", new Object[] { threadId, x },
-                                                                        false));
-                                                }
                                                 return false;
                                         }
                                 }
                         }
                 }
-
         }
 
         public boolean contains(T x) {
@@ -169,8 +170,6 @@ public class LockFreeSkipList<T extends Comparable<T>> implements LockFreeSet<T>
 
         public boolean contains(int threadId, T x) {
 
-                // boolean result
-                boolean result = false;
                 int bottomLevel = 0;
                 int key = x.hashCode();
                 boolean[] marked = { false };
@@ -189,16 +188,15 @@ public class LockFreeSkipList<T extends Comparable<T>> implements LockFreeSet<T>
                                         pred = curr;
                                         curr = succ;
                                 } else {
-                                        result = curr.value != null && x.compareTo(curr.value) == 0 && !marked[0];
-                                        synchronized (log) {
-                                                log.add(new Log.Entry("contains", new Object[] { threadId, x },
-                                                                result));
-                                        }
                                         break;
                                 }
                         }
                 }
-                return result;
+                synchronized (log) {
+                        log.add(new Log.Entry("contains", new Object[] { threadId, x },
+                                        (curr.value != null && x.compareTo(curr.value) == 0)));
+                }
+                return curr.value != null && x.compareTo(curr.value) == 0;
         }
 
         private boolean find(T x, Node<T>[] preds, Node<T>[] succs) {
