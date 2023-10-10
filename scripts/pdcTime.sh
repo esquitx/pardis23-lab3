@@ -20,16 +20,16 @@ javac -d ../bin TimeMeasurement.java
 cd ..
 
 type=$1
-filepath=data/exectime${type}.dat
+filepath=data/localExectimeFor${type}.dat
 
 
 echo "Script initiated at `date` on `hostname`"
 
 ## declare num of variables
-declare -a numThreads=(1 2 4 8 16 32 64 96)
+declare -a numThreads=(1 2 4 8)
 
 for threadCount in "${numThreads[@]}"
 do
-srun java -cp ./bin TimeMeasurement "$type" $threadCount 1000000 1000000 1000000 'false' >> $filepath
+srun java -cp ./bin TimeMeasurement "$type" $threadCount 1000000 1000000 1000000 >> $filepath
 done
 echo "Script finished at `date` on `hostname`"

@@ -2,6 +2,21 @@ public class Auxiliary {
 
     private static final int NUM_SAMPLES = 1_000;
 
+    public static LockFreeSet getSet(String type) {
+        switch (type) {
+            case "basic":
+                return new LockFreeSkipList<>();
+            case "globLock":
+                return new GlobalLockSkipList();
+            case "locLock":
+                return new LocalLockSkipList();
+            case "lockfree":
+                return new LockFreeSkipList<>();
+            default:
+                return null;
+        }
+    }
+
     public static Distribution getOps(String type, int numOps, int seed) {
         int[] probability;
         switch (type) {

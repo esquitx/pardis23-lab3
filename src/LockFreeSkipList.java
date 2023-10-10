@@ -1,5 +1,4 @@
 import java.util.concurrent.atomic.AtomicMarkableReference;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.ArrayList;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -78,10 +77,7 @@ public class LockFreeSkipList<T extends Comparable<T>> implements LockFreeSet<T>
 
                         boolean found = find(x, preds, succs);
                         if (found) {
-                                // Unsuccessful linearization point
-                                synchronized (lock) {
-                                        log.add(new Log.Entry("add", new Object[] { threadId, x }, false));
-                                }
+
                                 return false;
 
                         } else {
@@ -95,11 +91,6 @@ public class LockFreeSkipList<T extends Comparable<T>> implements LockFreeSet<T>
 
                                 if (!pred.next[bottomLevel].compareAndSet(succ, newNode, false, false)) {
                                         continue;
-                                }
-
-                                // Successful add linearization point
-                                synchronized (lock) {
-                                        log.add(new Log.Entry("add", new Object[] { threadId, x }, true));
                                 }
 
                                 for (int level = bottomLevel + 1; level <= topLevel; level++) {
@@ -132,9 +123,7 @@ public class LockFreeSkipList<T extends Comparable<T>> implements LockFreeSet<T>
                 while (true) {
                         boolean found = find(x, preds, succs);
                         if (!found) {
-                                synchronized (lock) {
-                                        log.add(new Log.Entry("remove", new Object[] { threadId, x }, false));
-                                }
+
                                 return false;
                         } else {
                                 Node<T> nodeToRemove = succs[bottomLevel];
@@ -154,17 +143,11 @@ public class LockFreeSkipList<T extends Comparable<T>> implements LockFreeSet<T>
                                         succ = succs[bottomLevel].next[bottomLevel].get(marked);
                                         if (iMarkedIt) {
                                                 // Successful remove linearization point
-                                                synchronized (lock) {
-                                                        log.add(new Log.Entry("remove", new Object[] { threadId, x },
-                                                                        true));
-                                                }
+
                                                 find(x, preds, succs);
                                                 return true;
                                         } else if (marked[0]) {
-                                                synchronized (lock) {
-                                                        log.add(new Log.Entry("remove", new Object[] { threadId, x },
-                                                                        false));
-                                                }
+
                                                 return false;
                                         }
 
@@ -202,12 +185,7 @@ public class LockFreeSkipList<T extends Comparable<T>> implements LockFreeSet<T>
                         }
                 }
 
-                // Linearization point before returns - no modification in list
-                boolean result = (curr.value != null && x.compareTo(curr.value) == 0);
-                synchronized (lock) {
-                        log.add(new Log.Entry("contains", new Object[] { threadId, x }, result));
-                }
-                return result;
+                return curr.value != null && x.compareTo(curr.value) == 0;
         }
 
         private boolean find(T x, Node<T>[] preds, Node<T>[] succs) {
