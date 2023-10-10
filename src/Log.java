@@ -14,34 +14,36 @@ public class Log {
         public static boolean validate(Log.Entry[] log) {
 
                 HashSet<Object> set = new HashSet<>();
-                int discrepancyCount = 0;
+                int discrepancies = 0;
 
                 for (Log.Entry event : log) {
 
-                        if (event.methodName.equals("add")) {
-                                boolean realReturnValue = set.add(event.arguments[0]);
-                                if (realReturnValue != (boolean) event.returnValue) {
-                                        discrepancyCount++;
-                                }
+                        boolean seqReturn = false;
+                        switch (event.methodName) {
+                                case "add":
+                                        seqReturn = set.add(event.arguments[1]);
+                                        break;
+                                case "remove":
+                                        seqReturn = set.remove(event.arguments[1]);
+                                        break;
+                                case "contains":
+                                        seqReturn = set.contains(event.arguments[1]);
+                                        break;
+                                default:
+                                        System.err.printf("%s is not a method name not identified. Check for errors",
+                                                        event.methodName);
+                                        System.exit(1);
 
-                        } else if (event.methodName.equals("remove")) {
-                                boolean realReturnValue = set.remove(event.arguments[0]);
-                                if (realReturnValue != (boolean) event.returnValue) {
-                                        discrepancyCount++;
-                                }
+                        }
 
-                        } else if (event.methodName.equals("contains")) {
-                                boolean realReturnValue = set.contains(event.arguments[0]);
-                                if (realReturnValue != (boolean) event.returnValue) {
-                                        discrepancyCount++;
-                                }
+                        if (seqReturn != event.returnValue) {
+                                discrepancies++;
                         }
                 }
 
-                // Notify discrepancy count in terminal
-                System.err.printf("Encountered %d discrepancies\n", discrepancyCount);
+                System.err.printf("Enconuntered %d discrepancies", discrepancies);
 
-                return discrepancyCount == 0;
+                return discrepancies == 0;
         }
 
         // Log entry for linearization point.
@@ -49,10 +51,10 @@ public class Log {
 
                 String methodName;
                 Object[] arguments;
-                Object returnValue;
+                boolean returnValue;
                 long linearizationTime;
 
-                public Entry(String methodName, Object[] arguments, Object returnValue) {
+                public Entry(String methodName, Object[] arguments, boolean returnValue) {
                         this.methodName = methodName;
                         this.arguments = arguments;
                         this.returnValue = returnValue;

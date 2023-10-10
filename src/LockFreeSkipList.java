@@ -1,4 +1,5 @@
 import java.util.concurrent.atomic.AtomicMarkableReference;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.ArrayList;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -9,10 +10,11 @@ public class LockFreeSkipList<T extends Comparable<T>> implements LockFreeSet<T>
         private final Node<T> head = new Node<T>();
         private final Node<T> tail = new Node<T>();
 
-        // log
-        private ArrayList<Log.Entry> log = new ArrayList<Log.Entry>();
+        // Log
+        ArrayList<Log.Entry> log = new ArrayList<Log.Entry>();
 
         // Global lock
+        Object lock = new Object();
 
         public LockFreeSkipList() {
                 for (int i = 0; i < head.next.length; i++) {
@@ -67,51 +69,54 @@ public class LockFreeSkipList<T extends Comparable<T>> implements LockFreeSet<T>
 
         @SuppressWarnings("unchecked")
         public boolean add(int threadId, T x) {
-
                 int topLevel = randomLevel();
                 int bottomLevel = 0;
                 Node<T>[] preds = (Node<T>[]) new Node[MAX_LEVEL + 1];
                 Node<T>[] succs = (Node<T>[]) new Node[MAX_LEVEL + 1];
-                // Start traversing list
+
                 while (true) {
-                        // Check if element already added, end if so
+
                         boolean found = find(x, preds, succs);
                         if (found) {
-                                synchronized (log) {
+                                // Unsuccessful linearization point
+                                synchronized (lock) {
                                         log.add(new Log.Entry("add", new Object[] { threadId, x }, false));
                                 }
                                 return false;
+
                         } else {
-                                Node<T> newNode = new Node(x, topLevel); // Create the new node
-                                // Traverse list in order to find place to add
+                                Node<T> newNode = new Node(x, topLevel);
                                 for (int level = bottomLevel; level <= topLevel; level++) {
                                         Node<T> succ = succs[level];
                                         newNode.next[level].set(succ, false);
                                 }
                                 Node<T> pred = preds[bottomLevel];
                                 Node<T> succ = succs[bottomLevel];
-                                // If not reached bottom level and not marked, skip
+
                                 if (!pred.next[bottomLevel].compareAndSet(succ, newNode, false, false)) {
-                                        // Successful add
-                                        synchronized (log) {
-                                                log.add(new Log.Entry("add", new Object[] { threadId, x }, true));
-                                        }
                                         continue;
                                 }
-                                // Traverse levels
+
+                                // Successful add linearization point
+                                synchronized (lock) {
+                                        log.add(new Log.Entry("add", new Object[] { threadId, x }, true));
+                                }
+
                                 for (int level = bottomLevel + 1; level <= topLevel; level++) {
                                         while (true) {
                                                 pred = preds[level];
                                                 succ = succs[level];
-                                                // If found place in next level, stop.
-                                                if (pred.next[level].compareAndSet(succ, newNode, false, false))
+                                                if (pred.next[level].compareAndSet(succ, newNode, false, false)) {
                                                         break;
+                                                }
                                                 find(x, preds, succs);
                                         }
                                 }
+
                                 return true;
                         }
                 }
+
         }
 
         public boolean remove(T x) {
@@ -127,8 +132,7 @@ public class LockFreeSkipList<T extends Comparable<T>> implements LockFreeSet<T>
                 while (true) {
                         boolean found = find(x, preds, succs);
                         if (!found) {
-                                // Unsuccessful remove
-                                synchronized (log) {
+                                synchronized (lock) {
                                         log.add(new Log.Entry("remove", new Object[] { threadId, x }, false));
                                 }
                                 return false;
@@ -147,21 +151,27 @@ public class LockFreeSkipList<T extends Comparable<T>> implements LockFreeSet<T>
                                 while (true) {
                                         boolean iMarkedIt = nodeToRemove.next[bottomLevel].compareAndSet(succ, succ,
                                                         false, true);
-                                        // Successful remove
-                                        synchronized (log) {
-                                                log.add(new Log.Entry("remove", new Object[] { threadId, x }, true));
-
-                                        }
                                         succ = succs[bottomLevel].next[bottomLevel].get(marked);
                                         if (iMarkedIt) {
+                                                // Successful remove linearization point
+                                                synchronized (lock) {
+                                                        log.add(new Log.Entry("remove", new Object[] { threadId, x },
+                                                                        true));
+                                                }
                                                 find(x, preds, succs);
                                                 return true;
                                         } else if (marked[0]) {
+                                                synchronized (lock) {
+                                                        log.add(new Log.Entry("remove", new Object[] { threadId, x },
+                                                                        false));
+                                                }
                                                 return false;
                                         }
+
                                 }
                         }
                 }
+
         }
 
         public boolean contains(T x) {
@@ -169,7 +179,6 @@ public class LockFreeSkipList<T extends Comparable<T>> implements LockFreeSet<T>
         }
 
         public boolean contains(int threadId, T x) {
-
                 int bottomLevel = 0;
                 int key = x.hashCode();
                 boolean[] marked = { false };
@@ -192,11 +201,13 @@ public class LockFreeSkipList<T extends Comparable<T>> implements LockFreeSet<T>
                                 }
                         }
                 }
-                synchronized (log) {
-                        log.add(new Log.Entry("contains", new Object[] { threadId, x },
-                                        (curr.value != null && x.compareTo(curr.value) == 0)));
+
+                // Linearization point before returns - no modification in list
+                boolean result = (curr.value != null && x.compareTo(curr.value) == 0);
+                synchronized (lock) {
+                        log.add(new Log.Entry("contains", new Object[] { threadId, x }, result));
                 }
-                return curr.value != null && x.compareTo(curr.value) == 0;
+                return result;
         }
 
         private boolean find(T x, Node<T>[] preds, Node<T>[] succs) {
@@ -210,6 +221,7 @@ public class LockFreeSkipList<T extends Comparable<T>> implements LockFreeSet<T>
                         pred = head;
                         for (int level = MAX_LEVEL; level >= bottomLevel; level--) {
                                 curr = pred.next[level].getReference();
+                                // Successful / unsuccessful add / remove linearization points
                                 while (true) {
                                         succ = curr.next[level].get(marked);
                                         while (marked[0]) {
@@ -230,6 +242,7 @@ public class LockFreeSkipList<T extends Comparable<T>> implements LockFreeSet<T>
                                 preds[level] = pred;
                                 succs[level] = curr;
                         }
+
                         return curr.value != null && x.compareTo(curr.value) == 0;
                 }
         }
@@ -240,8 +253,7 @@ public class LockFreeSkipList<T extends Comparable<T>> implements LockFreeSet<T>
                 Log.Entry[] logArray = new Log.Entry[log.size()];
                 log.toArray(logArray);
 
-                // return as array
+                // Return new array
                 return logArray;
         }
-
 }

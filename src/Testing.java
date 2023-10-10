@@ -5,14 +5,13 @@ import java.util.Random;
 // Testing that the LockFreeSet is implemented correctly
 public class Testing {
 
-        public static void main(String [] args)
-        {
+        public static void main(String[] args) {
                 Set<Integer> seqSet = new HashSet<>();
                 LockFreeSet<Integer> lockFreeSet = new LockFreeSkipList<>();
 
                 Random rng = new Random();
-                for (int i = 0; i < 1000000; ++i) {
-                        int val = rng.nextInt(1000);
+                for (int i = 0; i < 1_000_000; ++i) {
+                        int val = rng.nextInt(100_000);
                         int op = rng.nextInt(3);
                         String opName;
                         boolean resSeq, resLockFree;
@@ -29,9 +28,11 @@ public class Testing {
                                 resLockFree = lockFreeSet.contains(val);
                                 opName = "contains";
                         }
+
                         if (resSeq == resLockFree)
                                 continue;
-                        System.out.println(": value of lock free (" + resLockFree + ") not matching sequential (" + resSeq + ")");
+                        System.out.println(": value of lock free (" + resLockFree + ") not matching sequential ("
+                                        + resSeq + ")");
                 }
         }
 }
