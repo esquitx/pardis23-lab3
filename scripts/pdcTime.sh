@@ -25,7 +25,7 @@ echo "Script initiated at `date` on `hostname`"
 ## declare variable types
 types=("A1" "A2" "B1" "B2")
 
-for type in "${!types[@]}"
+for type in "${types[@]}"
 do
 ## get filepath
 filepath=data/noLockExectimeFor${type}.dat
