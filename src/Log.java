@@ -41,7 +41,7 @@ public class Log {
                         }
                 }
 
-                System.err.printf("Enconuntered %d discrepancies", discrepancies);
+                System.err.printf("Enconuntered %d discrepancies\n", discrepancies);
 
                 return discrepancies == 0;
         }

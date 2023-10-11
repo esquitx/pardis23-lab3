@@ -43,12 +43,13 @@ public class Measurement {
         }
     }
 
-    public static long measure(String type, int threads, int numOps, int max) {
+    @SuppressWarnings("unchecked")
+    public static long measure(String sampling, String type, int threads, int numOps, int max) {
 
         long execTime = 0;
         try {
             // Create a standard lock free skip list
-            LockFreeSet<Integer> lockFreeSet = new LockFreeSkipList<>();
+            LockFreeSet<Integer> lockFreeSet = Auxiliary.getSet(sampling);
 
             // Get ops and values for selected execution type
             Distribution ops = Auxiliary.getOps(type, numOps, 42);
@@ -140,14 +141,16 @@ public class Measurement {
 
     public static void main(String[] args) {
 
+        // Sampling type
+        String sampling = args[0];
         // Execution type - A1, A2, B1, B2
-        String type = args[0];
+        String type = args[1];
         // Number of threads.
-        int threads = Integer.parseInt(args[1]);
+        int threads = Integer.parseInt(args[2]);
         // Number of ops
-        int numOps = Integer.parseInt(args[2]);
+        int numOps = Integer.parseInt(args[3]);
         // Max sampling number
-        int max = Integer.parseInt(args[3]);
+        int max = Integer.parseInt(args[4]);
 
         // Print information to stderr
         System.err.printf("Execution type:    %s\n", type);
@@ -163,7 +166,7 @@ public class Measurement {
 
         // Take measurements
         System.err.println("Taking measurements...");
-        double execTime = measure(type, threads, numOps, max);
+        double execTime = measure(sampling, type, threads, numOps, max);
         // double[] results = Auxiliary.getMeanAndStDev(measurements);
 
         // Output results to console
