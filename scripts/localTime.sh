@@ -15,8 +15,8 @@ numThreads=(1 2 4 8)
 ## thread loop
 for threadCount in "${numThreads[@]}"
 do
-java -cp ./bin Measurement "basic" "A1" $threadCount 100000 100000 100000 >> data/locLockExectimeForA.dat
-java -cp ./bin Measurement "basic" "A2" $threadCount 100000 100000 100000 >> data/locLockExectimeForB.dat
+java -cp ./bin Measurement "basic" "A1" $threadCount 100000 100000 100000 >> data/localExectimeForA.dat
+java -cp ./bin Measurement "basic" "A2" $threadCount 100000 100000 100000 >> data/localExectimeForB.dat
 done
 ##
 
