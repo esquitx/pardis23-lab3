@@ -170,7 +170,7 @@ public class Measurement {
         // double[] results = Auxiliary.getMeanAndStDev(measurements);
 
         // Output results to console
-        System.out.printf("%s %d %.2f", type, threads, execTime);
+        System.out.printf("%s %d %.2f\n", type, threads, execTime);
 
     }
 }
