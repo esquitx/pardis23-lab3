@@ -3,18 +3,18 @@
 echo "Compiling ..."
 cd ..
 cd src
-javac -d ../bin TimeMeasurement.java
+javac -d ../bin Measurement.java
 cd ..
 
 
 echo "Script initiated at `date` on `hostname`"
 
 ## declare num of variables
-declare -a numThreads=(1 2 4 8 16 32 64 96)
+declare -a numThreads=(1 2 4 8)
 
 for threadCount in "${numThreads[@]}"
 do
-srun java -cp ./bin TimeMeasurement "A1" $threadCount 1000000 1000000 1000000 >> data/pdcExectimeForA.dat
-srun java -cp ./bin TimeMeasurement "A2" $threadCount 1000000 1000000 1000000 >> data/pdcExectimeForB.dat
+java -cp ./bin Measurement "basic" "A1" $threadCount 100000 100000 100000 >> data/localExectimeForA.dat
+java -cp ./bin Measurement "basic" "A2" $threadCount 100000 100000 100000 >> data/localExectimeForB.dat
 done
 echo "Script finished at `date` on `hostname`"

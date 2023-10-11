@@ -16,20 +16,25 @@
 echo "Compiling ..."
 cd ..
 cd src
-javac -d ../bin TimeMeasurement.java
+javac -d ../bin Measurement.java
 cd ..
-
-type=$1
-filepath=data/localExectimeFor${type}.dat
 
 
 echo "Script initiated at `date` on `hostname`"
 
+## declare variable types
+types=("A1" "A2" "B1" "B2")
+
+for type in "${!types[@]}"
+do
+## get filepath
+filepath=data/noLockExectimeFor${type}.dat
+
 ## declare num of variables
-declare -a numThreads=(1 2 4 8)
+numThreads=(1 2 4 8 16 32 64 96)
 
 for threadCount in "${numThreads[@]}"
 do
-srun java -cp ./bin TimeMeasurement "$type" $threadCount 1000000 1000000 1000000 >> $filepath
+java -cp ./bin Measurement "basic" "$type" $threadCount 1000000 1000000 1000000 >> $filepath
 done
 echo "Script finished at `date` on `hostname`"
