@@ -19,8 +19,12 @@ filepath=data/noLockExectimeFor${type}.dat
 ## declare num of variables
 numThreads=(1 2 4 8 16 32 64 96)
 
+## thread loop
 for threadCount in "${numThreads[@]}"
 do
 java -cp ./bin Measurement "nolock" "$type" $threadCount 1000000 1000000 1000000 >> $filepath
+done
+##
+
 done
 echo "Script finished at `date` on `hostname`"
