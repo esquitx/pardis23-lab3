@@ -6,9 +6,9 @@ public class Auxiliary {
         switch (type) {
             case "basic":
                 return new LockFreeSkipList<>();
-            case "globLock":
+            case "globlock":
                 return new GlobLockSkipList();
-            case "locLock":
+            case "loclock":
                 return new LocLockSkipList();
             case "nolock":
                 return new NoLockSkipList<>();
