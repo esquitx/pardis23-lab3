@@ -43,7 +43,7 @@ public class Measurement {
         }
     }
 
-    public static long measure(String type, int threads, int numValues, int numOps, int max) {
+    public static long measure(String type, int threads, int numOps, int max) {
 
         long execTime = 0;
         try {
@@ -144,17 +144,14 @@ public class Measurement {
         String type = args[0];
         // Number of threads.
         int threads = Integer.parseInt(args[1]);
-        // Number of values
-        int numValues = Integer.parseInt(args[2]);
         // Number of ops
-        int numOps = Integer.parseInt(args[3]);
+        int numOps = Integer.parseInt(args[2]);
         // Max sampling number
-        int max = Integer.parseInt(args[4]);
+        int max = Integer.parseInt(args[3]);
 
         // Print information to stderr
         System.err.printf("Execution type:    %s\n", type);
         System.err.printf("Thread count:      %d\n", threads);
-        System.err.printf("Number of values:  %d\n", numValues);
         System.err.printf("Number of ops:     %d\n", numOps);
         System.err.printf("Max value:         %d\n", max);
 
@@ -166,7 +163,7 @@ public class Measurement {
 
         // Take measurements
         System.err.println("Taking measurements...");
-        double execTime = measure(type, threads, numValues, numOps, max);
+        double execTime = measure(type, threads, numOps, max);
         // double[] results = Auxiliary.getMeanAndStDev(measurements);
 
         // Output results to console

@@ -3,7 +3,7 @@ import java.util.concurrent.atomic.AtomicMarkableReference;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-public class LockFreeSamplingSkipList<T extends Comparable<T>> implements LockFreeSet<T> {
+public class NoLockSkipList<T extends Comparable<T>> implements LockFreeSet<T> {
     /* Number of levels */
     private static final int MAX_LEVEL = 16;
 
@@ -13,9 +13,9 @@ public class LockFreeSamplingSkipList<T extends Comparable<T>> implements LockFr
     // Log
     CopyOnWriteArrayList<Log.Entry> log = new CopyOnWriteArrayList<Log.Entry>();
 
-    public LockFreeSamplingSkipList() {
+    public NoLockSkipList() {
         for (int i = 0; i < head.next.length; i++) {
-            head.next[i] = new AtomicMarkableReference<LockFreeSamplingSkipList.Node<T>>(tail, false);
+            head.next[i] = new AtomicMarkableReference<NoLockSkipList.Node<T>>(tail, false);
         }
     }
 

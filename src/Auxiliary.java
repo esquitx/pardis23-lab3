@@ -7,11 +7,11 @@ public class Auxiliary {
             case "basic":
                 return new LockFreeSkipList<>();
             case "globLock":
-                return new GlobalLockSkipList();
+                return new GlobLockSkipList();
             case "locLock":
-                return new LocalLockSkipList();
-            case "lockfree":
-                return new LockFreeSkipList<>();
+                return new LocLockSkipList();
+            case "nolock":
+                return new NoLockSkipList<>();
             default:
                 return null;
         }

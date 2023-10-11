@@ -1,8 +1,9 @@
 import java.util.concurrent.atomic.AtomicMarkableReference;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.ArrayList;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class GlobalLockSkipList<T extends Comparable<T>> implements LockFreeSet<T> {
+public class GlobLockSkipList<T extends Comparable<T>> implements LockFreeSet<T> {
     /* Number of levels */
     private static final int MAX_LEVEL = 16;
 
@@ -13,11 +14,11 @@ public class GlobalLockSkipList<T extends Comparable<T>> implements LockFreeSet<
     ArrayList<Log.Entry> log = new ArrayList<Log.Entry>();
 
     // Global lock
-    Object lock = new Object();
+    ReentrantLock lock = new ReentrantLock();
 
-    public GlobalLockSkipList() {
+    public GlobLockSkipList() {
         for (int i = 0; i < head.next.length; i++) {
-            head.next[i] = new AtomicMarkableReference<GlobalLockSkipList.Node<T>>(tail, false);
+            head.next[i] = new AtomicMarkableReference<GlobLockSkipList.Node<T>>(tail, false);
         }
     }
 
@@ -78,8 +79,11 @@ public class GlobalLockSkipList<T extends Comparable<T>> implements LockFreeSet<
             boolean found = find(x, preds, succs);
             if (found) {
                 // Unsuccessful linearization point
-                synchronized (lock) {
+                lock.lock();
+                try {
                     log.add(new Log.Entry("add", new Object[] { threadId, x }, false));
+                } finally {
+                    lock.unlock();
                 }
                 return false;
 
@@ -97,8 +101,11 @@ public class GlobalLockSkipList<T extends Comparable<T>> implements LockFreeSet<
                 }
 
                 // Successful add linearization point
-                synchronized (lock) {
+                lock.lock();
+                try {
                     log.add(new Log.Entry("add", new Object[] { threadId, x }, true));
+                } finally {
+                    lock.unlock();
                 }
 
                 for (int level = bottomLevel + 1; level <= topLevel; level++) {
@@ -131,8 +138,11 @@ public class GlobalLockSkipList<T extends Comparable<T>> implements LockFreeSet<
         while (true) {
             boolean found = find(x, preds, succs);
             if (!found) {
-                synchronized (lock) {
+                lock.lock();
+                try {
                     log.add(new Log.Entry("remove", new Object[] { threadId, x }, false));
+                } finally {
+                    lock.unlock();
                 }
                 return false;
             } else {
@@ -153,17 +163,17 @@ public class GlobalLockSkipList<T extends Comparable<T>> implements LockFreeSet<
                     succ = succs[bottomLevel].next[bottomLevel].get(marked);
                     if (iMarkedIt) {
                         // Successful remove linearization point
-                        synchronized (lock) {
+                        lock.lock();
+                        try {
                             log.add(new Log.Entry("remove", new Object[] { threadId, x },
                                     true));
+                        } finally {
+                            lock.unlock();
                         }
                         find(x, preds, succs);
                         return true;
                     } else if (marked[0]) {
-                        synchronized (lock) {
-                            log.add(new Log.Entry("remove", new Object[] { threadId, x },
-                                    false));
-                        }
+
                         return false;
                     }
 
@@ -203,10 +213,14 @@ public class GlobalLockSkipList<T extends Comparable<T>> implements LockFreeSet<
 
         // Linearization point before returns - no modification in list
         boolean result = (curr.value != null && x.compareTo(curr.value) == 0);
-        synchronized (lock) {
+        lock.lock();
+        try {
             log.add(new Log.Entry("contains", new Object[] { threadId, x }, result));
+        } finally {
+            lock.unlock();
         }
         return result;
+
     }
 
     private boolean find(T x, Node<T>[] preds, Node<T>[] succs) {
