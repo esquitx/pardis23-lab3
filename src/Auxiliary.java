@@ -1,15 +1,15 @@
 public class Auxiliary {
 
-    private static final int NUM_SAMPLES = 1_000;
+    private static final int NUM_SAMPLES = 100;
 
     public static LockFreeSet getSet(String type) {
         switch (type) {
             case "basic":
                 return new LockFreeSkipList<>();
             case "globlock":
-                return new GlobLockSkipList();
+                return new GlobLockSkipList<>();
             case "loclock":
-                return new LocLockSkipList();
+                return new LocLockSkipList<>();
             case "nolock":
                 return new NoLockSkipList<>();
             default:
