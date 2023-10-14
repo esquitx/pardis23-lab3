@@ -36,7 +36,7 @@ numThreads=(1 2 4 8 16 32 64 96)
 ## thread loop
 for threadCount in "${numThreads[@]}"
 do
-java -cp ./bin Measurement "basic" "$type" $threadCount 1000000 1000000 1000000 >> $filepath
+srun java -cp ./bin Measurement "basic" "$type" $threadCount 1000000 1000000 1000000 >> $filepath
 done
 ##
 
