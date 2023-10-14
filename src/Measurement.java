@@ -16,7 +16,7 @@ public class Measurement {
         // WarmUp JVM, but also test LockFreeSkipList implementation
         for (int k = 0; k < warmUp; k++) {
             Random rng = new Random();
-            for (int i = 0; i < 100_000; i++) {
+            for (int i = 0; i < 1_000_000; i++) {
                 int val = rng.nextInt(100);
                 int op = rng.nextInt(3);
                 String opName;
@@ -44,9 +44,8 @@ public class Measurement {
     }
 
     @SuppressWarnings("unchecked")
-    public static long measure(String sampling, String type, int threads, int numOps, int max) {
+    public static void measure(String sampling, String type, int threads, int numOps, int max) {
 
-        long execTime = 0;
         try {
             // Create a standard lock free skip list
             LockFreeSet<Integer> lockFreeSet = Auxiliary.getSet(sampling, threads);
@@ -56,21 +55,22 @@ public class Measurement {
             Distribution values = Auxiliary.getValues(type, max, 42);
 
             // Record execTime
-            execTime = run_measurement(threads, lockFreeSet, ops, values, numOps);
+            double execTime = run_measurement(threads, lockFreeSet, ops, values, numOps);
 
             // Round complete. Proceding to validation.
             Log.Entry[] log = lockFreeSet.getLog();
-            boolean isValidated = Log.validate(log);
-            if (!isValidated) {
-                System.err.printf("Log is NOT correctly linearized\n");
-            }
+            int discrepancies = Log.validate(log);
+
+            // Calculate accuracy
+            double accuracy = 1 - (discrepancies / (numOps * threads));
+
+            // Output results to console
+            System.out.printf("%s %d %.2f %d %.4f \n", type, threads, execTime, discrepancies, accuracy);
 
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);
         }
-
-        return execTime;
 
     }
 
@@ -159,18 +159,16 @@ public class Measurement {
         System.err.printf("Max value:         %d\n", max);
 
         // Warmup JVM
-        int warmUp = 100; // Number of warmup rounds
+        int warmUp = 30; // Number of warmup rounds
         System.err.println("Warming up...");
+
         warmup(warmUp);
         System.err.println("Warmup COMPLETE.");
 
         // Take measurements
         System.err.println("Taking measurements...");
-        double execTime = measure(sampling, type, threads, numOps, max);
+        measure(sampling, type, threads, numOps, max);
         // double[] results = Auxiliary.getMeanAndStDev(measurements);
-
-        // Output results to console
-        System.out.printf("%s %d %.2f\n", type, threads, execTime);
 
     }
 }

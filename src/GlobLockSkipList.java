@@ -215,7 +215,6 @@ public class GlobLockSkipList<T extends Comparable<T>> implements LockFreeSet<T>
             log.add(new Log.Entry("contains", new Object[] { threadId, x },
                     curr.value != null && x.compareTo(curr.value) == 0));
         }
-
         return curr.value != null && x.compareTo(curr.value) == 0;
 
     }

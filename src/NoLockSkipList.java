@@ -237,11 +237,8 @@ public class NoLockSkipList<T extends Comparable<T>> implements LockFreeSet<T> {
     public Log.Entry[] getLog() {
 
         // Convert to array
-
-        System.out.println("getLog got called");
         Log.Entry[] logArray = new Log.Entry[log.size()];
 
-        System.out.println("logArray was created");
         logArray = log.toArray(logArray);
 
         // Return new array

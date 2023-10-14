@@ -11,7 +11,7 @@ public class Log {
                 // Do not implement
         }
 
-        public static boolean validate(Log.Entry[] log) {
+        public static int validate(Log.Entry[] log) {
 
                 HashSet<Object> set = new HashSet<>();
                 int discrepancies = 0;
@@ -43,7 +43,7 @@ public class Log {
 
                 System.err.printf("Encountered %d discrepancies\n", discrepancies);
 
-                return discrepancies == 0;
+                return discrepancies;
         }
 
         // Log entry for linearization point.
