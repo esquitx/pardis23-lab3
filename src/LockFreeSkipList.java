@@ -9,13 +9,8 @@ public class LockFreeSkipList<T extends Comparable<T>> implements LockFreeSet<T>
         private final Node<T> head = new Node<T>();
         private final Node<T> tail = new Node<T>();
 
-        // Log
-        ArrayList<Log.Entry> log = new ArrayList<Log.Entry>();
-
-        // Global lock
-        Object lock = new Object();
-
         public LockFreeSkipList() {
+
                 for (int i = 0; i < head.next.length; i++) {
                         head.next[i] = new AtomicMarkableReference<LockFreeSkipList.Node<T>>(tail, false);
                 }
@@ -77,9 +72,7 @@ public class LockFreeSkipList<T extends Comparable<T>> implements LockFreeSet<T>
 
                         boolean found = find(x, preds, succs);
                         if (found) {
-
                                 return false;
-
                         } else {
                                 Node<T> newNode = new Node(x, topLevel);
                                 for (int level = bottomLevel; level <= topLevel; level++) {
@@ -92,6 +85,8 @@ public class LockFreeSkipList<T extends Comparable<T>> implements LockFreeSet<T>
                                 if (!pred.next[bottomLevel].compareAndSet(succ, newNode, false, false)) {
                                         continue;
                                 }
+
+                                // LOG
 
                                 for (int level = bottomLevel + 1; level <= topLevel; level++) {
                                         while (true) {
@@ -147,7 +142,7 @@ public class LockFreeSkipList<T extends Comparable<T>> implements LockFreeSet<T>
                                                 find(x, preds, succs);
                                                 return true;
                                         } else if (marked[0]) {
-
+                                                // ll
                                                 return false;
                                         }
 
@@ -226,12 +221,6 @@ public class LockFreeSkipList<T extends Comparable<T>> implements LockFreeSet<T>
         }
 
         public Log.Entry[] getLog() {
-
-                // Convert to array
-                Log.Entry[] logArray = new Log.Entry[log.size()];
-                log.toArray(logArray);
-
-                // Return new array
-                return logArray;
+                return null;
         }
 }

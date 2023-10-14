@@ -1,10 +1,7 @@
 import java.util.concurrent.atomic.AtomicMarkableReference;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class LocLockSkipList<T extends Comparable<T>> implements LockFreeSet<T> {
@@ -14,13 +11,19 @@ public class LocLockSkipList<T extends Comparable<T>> implements LockFreeSet<T> 
     private final Node<T> head = new Node<T>();
     private final Node<T> tail = new Node<T>();
 
-    // Log
-    private static Map<Integer, ArrayList<Log.Entry>> logs = new HashMap<>();
+    // Logs
+    ArrayList<Log.Entry>[] logs;
+    long linearizationTime;
 
-    // Global lock
-    private static Map<Integer, ReentrantLock> locks = new HashMap<>();
+    public LocLockSkipList(int threads) {
 
-    public LocLockSkipList() {
+        // Initialize each thread's log
+        ArrayList<Log.Entry>[] logs = new ArrayList[threads];
+        for (int i = 0; i < threads; i++) {
+            logs[i] = new ArrayList<Log.Entry>();
+        }
+        this.logs = logs;
+
         for (int i = 0; i < head.next.length; i++) {
             head.next[i] = new AtomicMarkableReference<LocLockSkipList.Node<T>>(tail, false);
         }
@@ -80,16 +83,13 @@ public class LocLockSkipList<T extends Comparable<T>> implements LockFreeSet<T> 
 
         while (true) {
 
+            // THIS IS THE LINEARIZATION POINT
             boolean found = find(x, preds, succs);
+            linearizationTime = System.nanoTime();
+
             if (found) {
-                // Unsuccessful linearization point
-                getLock(threadId).lock();
-                try {
-                    logs.computeIfAbsent(threadId, k -> new ArrayList<>())
-                            .add(new Log.Entry("add", new Object[] { threadId, x }, false));
-                } finally {
-                    getLock(threadId).unlock();
-                }
+                // log here
+                logs[threadId].add(new Log.Entry("add", new Object[] { threadId, x }, false, linearizationTime));
                 return false;
 
             } else {
@@ -102,18 +102,14 @@ public class LocLockSkipList<T extends Comparable<T>> implements LockFreeSet<T> 
                 Node<T> pred = preds[bottomLevel];
                 Node<T> succ = succs[bottomLevel];
 
+                // Successful linearization point
                 if (!pred.next[bottomLevel].compareAndSet(succ, newNode, false, false)) {
                     continue;
                 }
+                long linearizationTime = System.nanoTime(); // record time just after
 
-                // Successful add linearization point
-                getLock(threadId).lock();
-                try {
-                    logs.computeIfAbsent(threadId, k -> new ArrayList<>())
-                            .add(new Log.Entry("add", new Object[] { threadId, x }, true));
-                } finally {
-                    getLock(threadId).unlock();
-                }
+                // log here
+                logs[threadId].add(new Log.Entry("add", new Object[] { threadId, x }, true, linearizationTime));
 
                 for (int level = bottomLevel + 1; level <= topLevel; level++) {
                     while (true) {
@@ -143,17 +139,15 @@ public class LocLockSkipList<T extends Comparable<T>> implements LockFreeSet<T> 
         Node<T>[] succs = (Node<T>[]) new Node[MAX_LEVEL + 1];
         Node<T> succ;
         while (true) {
+
+            // UNSUCCESSFUL LINEARIZATION POINT
             boolean found = find(x, preds, succs);
+            linearizationTime = System.nanoTime();
             if (!found) {
-                // Unsuccesful remove
-                getLock(threadId).lock();
-                try {
-                    logs.computeIfAbsent(threadId, k -> new ArrayList<>())
-                            .add(new Log.Entry("remove", new Object[] { threadId, x }, false));
-                } finally {
-                    getLock(threadId).unlock();
-                }
+                // log here
+                logs[threadId].add(new Log.Entry("remove", new Object[] { threadId, x }, false, linearizationTime));
                 return false;
+
             } else {
                 Node<T> nodeToRemove = succs[bottomLevel];
                 for (int level = nodeToRemove.topLevel; level >= bottomLevel + 1; level--) {
@@ -167,22 +161,20 @@ public class LocLockSkipList<T extends Comparable<T>> implements LockFreeSet<T> 
                 boolean[] marked = { false };
                 succ = nodeToRemove.next[bottomLevel].get(marked);
                 while (true) {
+                    // Successful linearization point
                     boolean iMarkedIt = nodeToRemove.next[bottomLevel].compareAndSet(succ, succ,
                             false, true);
+                    linearizationTime = System.nanoTime();
+                    //
                     succ = succs[bottomLevel].next[bottomLevel].get(marked);
                     if (iMarkedIt) {
-                        // Successful remove linearization point
-                        getLock(threadId).lock();
-                        try {
-                            logs.computeIfAbsent(threadId, k -> new ArrayList<>())
-                                    .add(new Log.Entry("remove", new Object[] { threadId, x }, true));
-                        } finally {
-                            getLock(threadId).unlock();
-                        }
+                        // log here
+                        logs[threadId]
+                                .add(new Log.Entry("remove", new Object[] { threadId, x }, true, linearizationTime));
                         find(x, preds, succs);
                         return true;
                     } else if (marked[0]) {
-
+                        logs[threadId].add(new Log.Entry("remove", new Object[] { threadId, x }, false));
                         return false;
                     }
 
@@ -222,13 +214,8 @@ public class LocLockSkipList<T extends Comparable<T>> implements LockFreeSet<T> 
 
         // Linearization point before returns - no modification in list
         boolean result = (curr.value != null && x.compareTo(curr.value) == 0);
-        getLock(threadId).lock();
-        try {
-            logs.computeIfAbsent(threadId, k -> new ArrayList<>())
-                    .add(new Log.Entry("contains", new Object[] { threadId, x }, result));
-        } finally {
-            getLock(threadId).unlock();
-        }
+        logs[threadId].add(new Log.Entry("contains", new Object[] { threadId, x }, result));
+
         return result;
     }
 
@@ -273,7 +260,7 @@ public class LocLockSkipList<T extends Comparable<T>> implements LockFreeSet<T> 
 
         ArrayList<Log.Entry> allEvents = new ArrayList<>();
 
-        for (ArrayList<Log.Entry> threadEvents : logs.values()) {
+        for (ArrayList<Log.Entry> threadEvents : logs) {
             allEvents.addAll(threadEvents);
         }
 
@@ -285,7 +272,4 @@ public class LocLockSkipList<T extends Comparable<T>> implements LockFreeSet<T> 
         return logArray;
     }
 
-    private static ReentrantLock getLock(int threadId) {
-        return locks.computeIfAbsent(threadId, k -> new ReentrantLock());
-    }
 }
