@@ -1,7 +1,7 @@
 
 import java.util.concurrent.atomic.AtomicMarkableReference;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class NoLockSkipList<T extends Comparable<T>> implements LockFreeSet<T> {
     /* Number of levels */
@@ -11,8 +11,9 @@ public class NoLockSkipList<T extends Comparable<T>> implements LockFreeSet<T> {
     private final Node<T> tail = new Node<T>();
 
     // Log
-    CopyOnWriteArrayList<Log.Entry> log = new CopyOnWriteArrayList<Log.Entry>();
+    ConcurrentLinkedQueue<Log.Entry> log = new ConcurrentLinkedQueue<Log.Entry>();
 
+    // Something more concurrent
     public NoLockSkipList() {
         for (int i = 0; i < head.next.length; i++) {
             head.next[i] = new AtomicMarkableReference<NoLockSkipList.Node<T>>(tail, false);
@@ -146,11 +147,9 @@ public class NoLockSkipList<T extends Comparable<T>> implements LockFreeSet<T> {
                     if (iMarkedIt) {
                         log.add(new Log.Entry("remove", new Object[] { threadId, x },
                                 true));
-
                         find(x, preds, succs);
                         return true;
                     } else if (marked[0]) {
-
                         log.add(new Log.Entry("remove", new Object[] { threadId, x },
                                 false));
 
@@ -238,8 +237,12 @@ public class NoLockSkipList<T extends Comparable<T>> implements LockFreeSet<T> {
     public Log.Entry[] getLog() {
 
         // Convert to array
+
+        System.out.println("getLog got called");
         Log.Entry[] logArray = new Log.Entry[log.size()];
-        log.toArray(logArray);
+
+        System.out.println("logArray was created");
+        logArray = log.toArray(logArray);
 
         // Return new array
         return logArray;
