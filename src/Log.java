@@ -41,7 +41,7 @@ public class Log {
                         }
                 }
 
-                System.err.printf("Enconuntered %d discrepancies\n", discrepancies);
+                System.err.printf("Encountered %d discrepancies\n", discrepancies);
 
                 return discrepancies == 0;
         }
@@ -59,6 +59,14 @@ public class Log {
                         this.arguments = arguments;
                         this.returnValue = returnValue;
                         this.linearizationTime = System.nanoTime();
+
+                }
+
+                public Entry(String methodName, Object[] arguments, boolean returnValue, long linearizationTime) {
+                        this.methodName = methodName;
+                        this.arguments = arguments;
+                        this.returnValue = returnValue;
+                        this.linearizationTime = linearizationTime;
 
                 }
         }

@@ -49,7 +49,7 @@ public class Measurement {
         long execTime = 0;
         try {
             // Create a standard lock free skip list
-            LockFreeSet<Integer> lockFreeSet = Auxiliary.getSet(sampling);
+            LockFreeSet<Integer> lockFreeSet = Auxiliary.getSet(sampling, threads);
 
             // Get ops and values for selected execution type
             Distribution ops = Auxiliary.getOps(type, numOps, 42);

@@ -13,7 +13,7 @@ public class GlobLockSkipList<T extends Comparable<T>> implements LockFreeSet<T>
     // Log
     ArrayList<Log.Entry> log = new ArrayList<Log.Entry>();
 
-    // Global lock
+    // lock
     ReentrantLock lock = new ReentrantLock();
 
     public GlobLockSkipList() {
@@ -69,6 +69,7 @@ public class GlobLockSkipList<T extends Comparable<T>> implements LockFreeSet<T>
 
     @SuppressWarnings("unchecked")
     public boolean add(int threadId, T x) {
+
         int topLevel = randomLevel();
         int bottomLevel = 0;
         Node<T>[] preds = (Node<T>[]) new Node[MAX_LEVEL + 1];
@@ -76,53 +77,49 @@ public class GlobLockSkipList<T extends Comparable<T>> implements LockFreeSet<T>
 
         while (true) {
 
-            boolean found = find(x, preds, succs);
-            if (found) {
-                // Unsuccessful linearization point
-                lock.lock();
-                try {
+            // UNSUCCESSFUL LINEARIZATION POINT
+            synchronized (log) {
+                boolean found = find(x, preds, succs);
+                if (found) {
+                    // LOG
                     log.add(new Log.Entry("add", new Object[] { threadId, x }, false));
-                } finally {
-                    lock.unlock();
+                    return false;
                 }
-                return false;
+            }
 
-            } else {
-                Node<T> newNode = new Node(x, topLevel);
-                for (int level = bottomLevel; level <= topLevel; level++) {
-                    Node<T> succ = succs[level];
-                    newNode.next[level].set(succ, false);
-                }
-                Node<T> pred = preds[bottomLevel];
-                Node<T> succ = succs[bottomLevel];
+            // else
+            Node<T> newNode = new Node(x, topLevel);
+            for (int level = bottomLevel; level <= topLevel; level++) {
+                Node<T> succ = succs[level];
+                newNode.next[level].set(succ, false);
+            }
 
+            Node<T> pred = preds[bottomLevel];
+            Node<T> succ = succs[bottomLevel];
+
+            // SUCCESSFUL LINEARIZATION POINT
+            synchronized (log) {
                 if (!pred.next[bottomLevel].compareAndSet(succ, newNode, false, false)) {
                     continue;
                 }
-
-                // Successful add linearization point
-                lock.lock();
-                try {
-                    log.add(new Log.Entry("add", new Object[] { threadId, x }, true));
-                } finally {
-                    lock.unlock();
-                }
-
-                for (int level = bottomLevel + 1; level <= topLevel; level++) {
-                    while (true) {
-                        pred = preds[level];
-                        succ = succs[level];
-                        if (pred.next[level].compareAndSet(succ, newNode, false, false)) {
-                            break;
-                        }
-                        find(x, preds, succs);
-                    }
-                }
-
-                return true;
+                // Succesful log
+                log.add(new Log.Entry("add", new Object[] { threadId, x }, true));
             }
-        }
 
+            for (int level = bottomLevel + 1; level <= topLevel; level++) {
+                while (true) {
+                    pred = preds[level];
+                    succ = succs[level];
+                    if (pred.next[level].compareAndSet(succ, newNode, false, false)) {
+                        break;
+                    }
+                    find(x, preds, succs);
+                }
+
+            }
+
+            return true;
+        }
     }
 
     public boolean remove(T x) {
@@ -131,49 +128,51 @@ public class GlobLockSkipList<T extends Comparable<T>> implements LockFreeSet<T>
 
     @SuppressWarnings("unchecked")
     public boolean remove(int threadId, T x) {
+
         int bottomLevel = 0;
         Node<T>[] preds = (Node<T>[]) new Node[MAX_LEVEL + 1];
         Node<T>[] succs = (Node<T>[]) new Node[MAX_LEVEL + 1];
         Node<T> succ;
         while (true) {
-            boolean found = find(x, preds, succs);
-            if (!found) {
-                lock.lock();
-                try {
+
+            // UNSUCCESSFUL LINEARIZATION POINT
+            synchronized (log) {
+                boolean found = find(x, preds, succs);
+                if (!found) {
+                    // LOG
                     log.add(new Log.Entry("remove", new Object[] { threadId, x }, false));
-                } finally {
-                    lock.unlock();
+                    return false;
                 }
-                return false;
-            } else {
-                Node<T> nodeToRemove = succs[bottomLevel];
-                for (int level = nodeToRemove.topLevel; level >= bottomLevel + 1; level--) {
-                    boolean[] marked = { false };
-                    succ = nodeToRemove.next[level].get(marked);
-                    while (!marked[0]) {
-                        nodeToRemove.next[level].compareAndSet(succ, succ, false, true);
-                        succ = nodeToRemove.next[level].get(marked);
-                    }
-                }
+            }
+
+            // else
+            Node<T> nodeToRemove = succs[bottomLevel];
+            for (int level = nodeToRemove.topLevel; level >= bottomLevel + 1; level--) {
                 boolean[] marked = { false };
-                succ = nodeToRemove.next[bottomLevel].get(marked);
-                while (true) {
+                succ = nodeToRemove.next[level].get(marked);
+                while (!marked[0]) {
+                    nodeToRemove.next[level].compareAndSet(succ, succ, false, true);
+                    succ = nodeToRemove.next[level].get(marked);
+                }
+            }
+
+            boolean[] marked = { false };
+            succ = nodeToRemove.next[bottomLevel].get(marked);
+            while (true) {
+
+                synchronized (log) {
+                    // SUCCESSFUL LINEARIZATION POINT
                     boolean iMarkedIt = nodeToRemove.next[bottomLevel].compareAndSet(succ, succ,
                             false, true);
                     succ = succs[bottomLevel].next[bottomLevel].get(marked);
                     if (iMarkedIt) {
-                        // Successful remove linearization point
-                        lock.lock();
-                        try {
-                            log.add(new Log.Entry("remove", new Object[] { threadId, x },
-                                    true));
-                        } finally {
-                            lock.unlock();
-                        }
+                        // LOG
+                        log.add(new Log.Entry("remove", new Object[] { threadId, x }, true));
                         find(x, preds, succs);
                         return true;
                     } else if (marked[0]) {
-
+                        // UNSUCCESSFUL LINEARIZATION LOG
+                        log.add(new Log.Entry("remove", new Object[] { threadId, x }, false));
                         return false;
                     }
 
@@ -194,36 +193,35 @@ public class GlobLockSkipList<T extends Comparable<T>> implements LockFreeSet<T>
         Node<T> pred = head;
         Node<T> curr = null;
         Node<T> succ = null;
-        for (int level = MAX_LEVEL; level >= bottomLevel; level--) {
-            curr = pred.next[level].getReference();
-            while (true) {
-                succ = curr.next[level].get(marked);
-                while (marked[0]) {
-                    curr = succ;
+
+        synchronized (log) {
+            for (int level = MAX_LEVEL; level >= bottomLevel; level--) {
+                curr = pred.next[level].getReference();
+                while (true) {
                     succ = curr.next[level].get(marked);
+                    while (marked[0]) {
+                        curr = succ;
+                        succ = curr.next[level].get(marked);
+                    }
+                    if (curr.value != null && x.compareTo(curr.value) < 0) {
+                        pred = curr;
+                        curr = succ;
+                    } else {
+                        break;
+                    }
                 }
-                if (curr.value != null && x.compareTo(curr.value) < 0) {
-                    pred = curr;
-                    curr = succ;
-                } else {
-                    break;
-                }
+
             }
+            log.add(new Log.Entry("contains", new Object[] { threadId, x },
+                    curr.value != null && x.compareTo(curr.value) == 0));
         }
 
-        // Linearization point before returns - no modification in list
-        boolean result = (curr.value != null && x.compareTo(curr.value) == 0);
-        lock.lock();
-        try {
-            log.add(new Log.Entry("contains", new Object[] { threadId, x }, result));
-        } finally {
-            lock.unlock();
-        }
-        return result;
+        return curr.value != null && x.compareTo(curr.value) == 0;
 
     }
 
     private boolean find(T x, Node<T>[] preds, Node<T>[] succs) {
+
         int bottomLevel = 0;
         boolean[] marked = { false };
         boolean snip;

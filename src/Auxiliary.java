@@ -2,14 +2,14 @@ public class Auxiliary {
 
     private static final int NUM_SAMPLES = 100;
 
-    public static LockFreeSet getSet(String type) {
+    public static LockFreeSet getSet(String type, int threads) {
         switch (type) {
             case "basic":
                 return new LockFreeSkipList<>();
             case "globlock":
                 return new GlobLockSkipList<>();
             case "loclock":
-                return new LocLockSkipList<>();
+                return new LocLockSkipList<>(threads);
             case "nolock":
                 return new NoLockSkipList<>();
             default:
