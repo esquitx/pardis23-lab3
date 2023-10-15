@@ -5,7 +5,7 @@
 # The name of the script is myjob
 #SBATCH -J measurePDC
 # 10 minutes wall-clock time will be given to this job
-#SBATCH -t 00:30:00
+#SBATCH -t 01:00:00
 # The partition
 #SBATCH -p main
 
