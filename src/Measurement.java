@@ -65,7 +65,7 @@ public class Measurement {
             double accuracy = 1 - (discrepancies / (numOps * threads));
 
             // Output results to console
-            System.out.printf("%s %d %.2f %d %.4f \n", type, threads, execTime, discrepancies, accuracy);
+            System.out.printf("%s %d %.2f %d %.2f\n", type, threads, execTime, discrepancies, accuracy);
 
         } catch (Exception e) {
             e.printStackTrace();
