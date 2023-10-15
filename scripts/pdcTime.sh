@@ -3,15 +3,12 @@
 # not required if you have set a default allocation
 #SBATCH -A edu23.dd2443
 # The name of the script is myjob
-#SBATCH -J measureJob
+#SBATCH -J measurePDC
 # 10 minutes wall-clock time will be given to this job
-#SBATCH -t 00:10:00
+#SBATCH -t 00:30:00
 # The partition
-#SBATCH -p shared
-# The number of tasks requested
-#SBATCH -n 64
-# The number of cores per task
-#SBATCH -c 8
+#SBATCH -p main
+
 
 echo "Compiling ..."
 cd ..
@@ -28,7 +25,7 @@ types=("A1" "A2" "B1" "B2")
 for type in "${types[@]}"
 do
 ## get filepath
-filepath=data/noLockExectimeFor${type}.dat
+filepath=data/pdcExectimeFor${type}.dat
 
 ## declare num of variables
 numThreads=(1 2 4 8 16 32 64 96)

@@ -1,4 +1,13 @@
 #!/bin/bash
+# Set the allocation to be charged for this job
+# not required if you have set a default allocation
+#SBATCH -A edu23.dd2443
+# The name of the script is myjob
+#SBATCH -J measureLocLock
+# 10 minutes wall-clock time will be given to this job
+#SBATCH -t 00:30:00
+# The partition
+#SBATCH -p main
 
 echo "Compiling ..."
 cd ..
