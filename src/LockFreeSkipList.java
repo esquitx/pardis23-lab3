@@ -9,6 +9,8 @@ public class LockFreeSkipList<T extends Comparable<T>> implements LockFreeSet<T>
         private final Node<T> head = new Node<T>();
         private final Node<T> tail = new Node<T>();
 
+        Log.Entry[] log = new Log.Entry[] {};
+
         public LockFreeSkipList() {
 
                 for (int i = 0; i < head.next.length; i++) {
@@ -221,6 +223,6 @@ public class LockFreeSkipList<T extends Comparable<T>> implements LockFreeSet<T>
         }
 
         public Log.Entry[] getLog() {
-                return null;
+                return log;
         }
 }

@@ -159,7 +159,7 @@ public class Measurement {
         System.err.printf("Max value:         %d\n", max);
 
         // Warmup JVM
-        int warmUp = 30; // Number of warmup rounds
+        int warmUp = 10; // Number of warmup rounds
         System.err.println("Warming up...");
 
         warmup(warmUp);
